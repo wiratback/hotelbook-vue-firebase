@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Back Hotel</title>
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="vendor/dataTable/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="vendor/dataTable/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="vendor/dataTable/css/buttons.dataTables.min.css">
+</head>
+
+<body>
+    <div id="app">
+        <navbar title="Booking"></navbar>
+        <div class="container-fluid" style="margin-top: 1em; margin-bottom: 4em;">
+            <div class="row">
+                <div class="col form-group">
+                    <label for="bname">Name:</label>
+                    <input type="text" class="form-control" placeholder="Name" id="bname" v-model="bookfrm.bname" />
+                </div>
+                <div class="col form-group">
+                    <label for="bphone">Phone number:</label>
+                    <input type="text" class="form-control" placeholder="Phone number" id="bphone" v-model="bookfrm.bphone" @change="getbookingfn" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label for="bin">Check in:</label>
+                    <input type="date" class="form-control" id="bin" :min="nowdate" v-model="bookfrm.bin" @change="getroomfn" />
+                </div>
+                <div class="col form-group">
+                    <label for="bout">Check out:</label>
+                    <input type="date" class="form-control" id="bout" :min="bookfrm.bin" v-model="bookfrm.bout" @change="getroomfn" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label for="id">Select room:</label>
+                    <div class="input-group mb-3">
+                        <select class="form-control" id="id" v-model="bookfrm.id" />
+                        <option v-for="(item, index) in roomfree" :key="index" :value="index">
+                            {{item.rid}} Type : {{item.rtype}} Floor : {{item.rfloor}}
+                        </option>
+                        </select>
+                        <div class="input-group-prepend">
+                            <button type="button" class="btn btn-primary" @click="savebookingfn"><i
+                                    class="fas fa-plus-circle"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="bookingtable" class="display responsive nowrap" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Room No</th>
+                            <th>Type</th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>in</th>
+                            <th>out</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <tabbar stateno=2></tabbar>
+
+        <!-- detail Modal -->
+        <div class="modal fade" id="detailModal">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Booking</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Customer name:</label>
+                            <input type="text" class="form-control" v-model="booking.bname" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Phone number:</label>
+                            <input type="text" class="form-control" v-model="booking.bphone" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Room no:</label>
+                            <input type="text" class="form-control" v-model="booking.rid" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Type:</label>
+                            <input type="text" class="form-control" v-model="booking.rtype" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Floor:</label>
+                            <input type="text" class="form-control" v-model="booking.rfloor" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Check in:</label>
+                            <input type="text" class="form-control" v-model="booking.bin" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label>Check out:</label>
+                            <input type="text" class="form-control" v-model="booking.bout" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Modal footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" @click="cancelbookingfn">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-firestore.js"></script>
+    <script src="cordova.js"></script>
+    <script src="js/index.js"></script>
+    <script src="vendor/jquery/js/jquery-3.5.1.min.js"></script>
+    <script src="vendor/popper/popper.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="vendor/dataTable/js/jquery.dataTables.min.js"></script>
+    <script src="vendor/dataTable/js/dataTables.responsive.min.js"></script>
+    <script src="vendor/dataTable/js/dataTables.buttons.min.js"></script>
+    <script src="vendor/vuejs/vue.min.js"></script>
+    <script src="component/navbar.js"></script>
+    <script src="component/tabbar.js"></script>
+    <script>
+        function selectbooking(v1) {
+            app.booking = app.bookings[v1];
+            console.log(app.booking);
+            $('#detailModal').modal('show');
+        }
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                rooms: [],
+                roomfree: [],
+                room: {},
+                bookings: [],
+                booking: {},
+                bookfrm: {
+                    id: null,
+                    bname: null,
+                    bphone: null,
+                    bin: null,
+                    bout: null
+                },
+                bookingtable: null,
+                bookingrows: [],
+                nowdate: null
+            },
+            methods: {
+                async initfn() {
+                    let date = new Date();
+                    let dd = (date.getDate() < 10 ? "0" : "") + date.getDate();
+                    let mm = (1 + date.getMonth() < 10 ? "0" : "") + (1 + date.getMonth());
+                    let yy = date.getFullYear();
+                    this.bookfrm.bin = this.bookfrm.bout = this.nowdate = yy + "-" + mm + "-" + dd;
+                    this.bookingtable = $('#bookingtable').DataTable({
+                        responsive: true,
+                        columnDefs: [{
+                            "targets": [6],
+                            "className": 'dt-center'
+                        }]
+                    });
+                    this.rooms = [];
+                    await db.collection("rooms").orderBy("rid")
+                        .get()
+                        .then(snapshot => {
+                            snapshot.forEach(doc => {
+                                let data = doc.data();
+                                data.id = doc.id;
+                                this.rooms.push(data);
+                            });
+                        });
+                    // console.log(this.rooms);
+                    this.getroomfn();
+                    this.getbookingfn();
+                },
+                async getroomfn() {
+                    let temp = [];
+                    await db.collection("booking").where("bout", ">", this.bookfrm.bin)
+                        .get()
+                        .then(snapshot => {
+                            snapshot.forEach(doc => {
+                                let data = doc.data();
+                                data.id = doc.id;
+                                temp.push(data);
+                            });
+                        });
+                    temp = temp.filter(element => element.bin < this.bookfrm.bout && element.bstate > 0);
+                    // console.log(temp);
+                    this.roomfree = this.rooms;
+                    for (let i = 0; i < temp.length; i++) {
+                        this.roomfree = this.roomfree.filter(element => element.rid != temp[i].rid);
+                    }
+                    // console.log(this.roomfree);
+                },
+
+                async getbookingfn() {
+                    await db.collection("booking")
+                        .where("bphone", "==", this.bookfrm.bphone)
+                        .where("bstate", "==", 1)
+                        .get()
+                        .then(snapshot => {
+                            this.bookings = [];
+                            this.bookingrows = [];
+                            let i = 0;
+                            snapshot.forEach(doc => {
+                                let data = doc.data();
+                                data.id = doc.id;
+                                let row = [
+                                    data.rid,
+                                    data.rtype,
+                                    data.bname,
+                                    data.bphone,
+                                    data.bin,
+                                    data.bout,
+                                    '<button type="button" class="btn btn-info" onClick="selectbooking(' + i + ')">Info</button>'
+                                ];
+                                this.bookings.push(data);
+                                this.bookingrows.push(row);
+                                i++;
+                            });
+                            this.bookingtable.clear().draw();
+                            this.bookingtable.rows.add(this.bookingrows).draw();
+                        });
+                    // console.log(this.bookings);
+                },
+                async savebookingfn() {
+                    this.room = this.roomfree[this.bookfrm.id];
+                    try {
+                        await db.collection("booking")
+                            .add({
+                                bname: this.bookfrm.bname,
+                                bphone: this.bookfrm.bphone,
+                                rid: this.room.rid,
+                                rtype: this.room.rtype,
+                                rfloor: this.room.rfloor,
+                                bin: this.bookfrm.bin,
+                                bout: this.bookfrm.bout,
+                                bstate: 1
+                            });
+                        alert('Completed');
+                    } catch (error) {
+                        alert(error.message);
+                    }
+                    this.getroomfn();
+                    this.getbookingfn();
+
+                },
+                async cancelbookingfn() {
+                    this.booking.bstate = 0;
+                    try {
+                        await db.collection("booking").doc(this.booking.id)
+                            .set(this.booking);
+                        alert('Completed');
+                        $('#detailModal').modal('hide');
+                    } catch (error) {
+                        alert(error.message);
+                    }
+                    this.getroomfn();
+                    this.getbookingfn();
+                }
+
+            },
+            mounted() {
+                this.initfn();
+            },
+        });
+    </script>
+</body>
+
+</html>

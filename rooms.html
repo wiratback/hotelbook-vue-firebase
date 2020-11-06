@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Back Hotel</title>
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="vendor/dataTable/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="vendor/dataTable/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="vendor/dataTable/css/buttons.dataTables.min.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- datatable -->
+        <navbar title="Rooms"></navbar>
+        <div class="container-fluid" style="margin-top: 1em; margin-bottom: 4em;">
+            <div style="overflow-x: auto;">
+                <table id="roomtable" class="display responsive nowrap" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Room No</th>
+                            <th>Type</th>
+                            <th>Floor</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <tabbar stateno=3></tabbar>
+
+        <!-- Room Modal -->
+        <div class="modal fade" id="roomModal">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Room Form</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="rid">Room Number:</label>
+                            <input type="text" class="form-control" placeholder="Room Number" id="rid" v-model="room.rid" />
+                        </div>
+                        <div class="form-group">
+                            <label for="rtype">Type:</label>
+                            <select class="form-control" id="rtype" v-model="room.rtype" />
+                            <option value="ห้องเตียงเดียว">ห้องเตียงเดียว</option>
+                            <option value="ห้องเตียงคู่">ห้องเตียงคู่</option>
+                            <option value="ห้องคู่รัก">ห้องคู่รัก</option>
+                            <option value="ห้องครอบครัว">ห้องครอบครัว</option>
+                            <option value="ห้องหมู่คณะ">ห้องหมู่คณะ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="rfloor">Floor:</label>
+                            <input type="text" class="form-control" placeholder="Floor" id="rfloor" v-model="room.rfloor" />
+                        </div>
+                    </div>
+
+                    <!-- Modal footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" style="font-size: 1.2em;" @click="roomsavefn">Save</button>
+                        <button type="button" class="btn btn-danger" style="font-size: 1.2em;" @click="roomremovefn">Remove</button>
+                        <button type=" button" class="btn btn-secondary" style="font-size: 1.2em;" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.24.0/firebase-firestore.js"></script>
+    <script src="cordova.js"></script>
+    <script src="js/index.js"></script>
+    <script src="vendor/jquery/js/jquery-3.5.1.min.js"></script>
+    <script src="vendor/popper/popper.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="vendor/dataTable/js/jquery.dataTables.min.js"></script>
+    <script src="vendor/dataTable/js/dataTables.responsive.min.js"></script>
+    <script src="vendor/dataTable/js/dataTables.buttons.min.js"></script>
+    <script src="vendor/vuejs/vue.min.js"></script>
+    <script src="component/navbar.js"></script>
+    <script src="component/tabbar.js"></script>
+    <script>
+        function selectroomfn(v1) {
+            app.formroomfn(v1);
+        }
+        var app = new Vue({
+            el: '#app',
+            data: {
+                rooms: [],
+                room: {},
+                roomtable: null,
+                roomrow: []
+            },
+            methods: {
+                initfn() {
+                    // table
+                    this.roomtable = $('#roomtable').DataTable({
+                        dom: 'Bfrtip',
+                        responsive: true,
+                        buttons: [{
+                            text: 'Add new room',
+                            action: () => {
+                                this.formroomfn(null);
+                            },
+                            enabled: true
+                        }],
+                        columnDefs: [{
+                            "targets": [2, 3],
+                            "className": 'dt-center'
+                        }]
+                    });
+                    this.getroomfn();
+                },
+                getroomfn() {
+                    db.collection("rooms")
+                        .onSnapshot(snapshot => {
+                            this.rooms = [];
+                            this.roomrow = [];
+                            let i = 0;
+                            snapshot.forEach(doc => {
+                                let data = doc.data();
+                                data.id = doc.id;
+                                let row = [
+                                    data.rid,
+                                    data.rtype,
+                                    data.rfloor,
+                                    '<button type="button" class="btn btn-info" onClick="selectroomfn(' + i + ')">Info</button>'
+                                ];
+                                this.rooms.push(data);
+                                this.roomrow.push(row);
+                                i++;
+                            });
+                            this.roomtable.clear().draw();
+                            this.roomtable.rows.add(this.roomrow).draw();
+                        });
+                },
+                formroomfn(v1) {
+                    if (v1 == null) {
+                        this.room = {
+                            id: null,
+                            rid: null,
+                            rtype: 'ห้องเตียงเดี่ยว',
+                            rfloor: null
+                        };
+                    } else {
+                        this.room = this.rooms[v1];
+                    }
+                    console.log(this.room);
+                    $('#roomModal').modal('show');
+                },
+                async roomsavefn() {
+                    try {
+                        if (this.room.id == null) {
+                            await db.collection("rooms")
+                                .add({
+                                    rid: this.room.rid,
+                                    rtype: this.room.rtype,
+                                    rfloor: this.room.rfloor
+                                });
+                        } else {
+                            await db.collection("rooms").doc(this.room.id)
+                                .set({
+                                    rid: this.room.rid,
+                                    rtype: this.room.rtype,
+                                    rfloor: this.room.rfloor
+                                });
+                        }
+                        alert('Completed')
+                        $('#roomModal').modal('hide');
+                    } catch (error) {
+                        alert(error.message);
+                    }
+                },
+
+                async roomremovefn() {
+                    try {
+                        await db.collection("rooms").doc(this.room.id).delete();
+                        alert('Completed')
+                        $('#roomModal').modal('hide');
+                    } catch (error) {
+                        alert(error.message);
+                    }
+                }
+            },
+            mounted() {
+                this.initfn();
+            },
+        });
+    </script>
+</body>
+
+</html>
